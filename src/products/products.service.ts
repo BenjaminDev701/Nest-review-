@@ -50,22 +50,37 @@ export class ProductsService {
     } else {
       //*el createQueryBuilder() nos ayuda a hacer consulta complejas con la bd usando SQL
       const queryBuilder = this.productRepository.createQueryBuilder()
-
-
-      product = await queryBuilder.where(`title =: title or slug=:slug`, {
-        title: term,
-        slug: term
+      //*:title ,:slug son variables temporales las cuales les asignamos el valor de term a esas variables
+      //*UPPER() TOMA EL VALOR DE LA COLUMNA Y LO PASA A MAYUSCULAS Y LA VARIBALE TEMPORAL LA PASAMOS A MAYUSCULAS ENTONCES EN LA COMPARACION RESULTA SER IGUAL
+      product = await queryBuilder.where(`UPPER(title) =:title or slug=:slug`, {
+        title: term.toUpperCase(),
+        slug: term.toLowerCase()
+        //*getOne() se usa para que si encuntra el title o el slug al mismo tiempo solo devuelva una consulta
       }).getOne()
     }
-    //const product = await this.productRepository.findOneBy({})
     if (!product) {
       throw new NotFoundException(`Product with ${term} not found`)
     }
     return product
   }
 
-  update(id: number, updateProductDto: UpdateProductDto) {
-    return `This action updates a #${id} product`;
+  async update(id: string, updateProductDto: UpdateProductDto) {
+
+    const product = await this.productRepository.preload({
+      //*lo busca por id
+      id: id,
+      //*carga todos los datos del objeto con ..., y esto se extiende del update haciendo que todos los campos sean opcionales y los que no rellena se vuelven a colocar lo que se tenia antes
+      ...updateProductDto
+    })
+    if (!product) throw new NotFoundException(`Product with ${id} not found`)
+
+    try {
+      await this.productRepository.save(product);
+
+      return product
+    } catch (error) {
+      this.handleExceptions(error)
+    }
   }
 
   async remove(id: string) {

@@ -1,4 +1,4 @@
-import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn, BeforeUpdate } from "typeorm";
 
 //*La entidad es como la tabla de la bd 
 @Entity()
@@ -23,11 +23,14 @@ export class Product {
     @Column("int", { default: 0 })
     stock: number
 
-    @Column("text", { array: true })
+    @Column("text", { array: true, default: [] })
     sizes: string[]
 
     @Column("text")
     gender: string
+
+    @Column("text", { array: true, default: [] })
+    tags: string[]
 
     @BeforeInsert()
     checkSlugInsert() {
@@ -35,6 +38,18 @@ export class Product {
             this.slug = this.title
 
         }
+        this.slug = this.slug
+            .toLowerCase()
+            .replaceAll(" ", "_")
+            .replaceAll("'", "")
+    }
+
+    @BeforeUpdate()
+    checkSlugUpdate() {
+        if (!this.slug) {
+            this.slug = this.title
+        }
+
         this.slug = this.slug
             .toLowerCase()
             .replaceAll(" ", "_")
