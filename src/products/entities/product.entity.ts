@@ -1,4 +1,7 @@
-import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn, BeforeUpdate } from "typeorm";
+
+import { text } from "stream/consumers";
+import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn, BeforeUpdate, OneToMany } from "typeorm";
+import { ProductImage } from "./product-images.entity";
 
 //*La entidad es como la tabla de la bd 
 @Entity()
@@ -31,6 +34,18 @@ export class Product {
 
     @Column("text", { array: true, default: [] })
     tags: string[]
+
+    @OneToMany(
+        //*Entidad con la que se relaciona 
+        () => ProductImage,
+        //* aqui hace que la entidad productImage apunte hacia productImage.producto que es el campo con el que se esta relacionando
+        (productImage) => productImage.product,
+        //* cascade hace que cuando se elimine el producto se eliminen las imagenes asociadas al producto
+        //* eager para que traiga las iamgenes automaticamente en el find* 
+        { cascade: true, eager: true }
+    )
+    //*Conectamos este campo a la tabla de ProductImage
+    images?: ProductImage[]
 
     @BeforeInsert()
     checkSlugInsert() {
