@@ -3,7 +3,7 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Product } from './entities/product.entity';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { validate as isUUID } from "uuid"
 import { ProductImage } from './entities';
@@ -21,7 +21,10 @@ export class ProductsService {
     private readonly productRepository: Repository<Product>,
 
     @InjectRepository(ProductImage)
-    private readonly productImageRepository: Repository<ProductImage>
+    private readonly productImageRepository: Repository<ProductImage>,
+
+    //*sirve para crear el queryRunner y de esta manera manejar las transacciones en caso de error
+    private readonly dataSource: DataSource
   ) { }
 
   async create(createProductDto: CreateProductDto) {
@@ -91,18 +94,35 @@ export class ProductsService {
 
   async update(id: string, updateProductDto: UpdateProductDto) {
 
+    const { images, ...toUpdate } = updateProductDto
+
     const product = await this.productRepository.preload({
       //*lo busca por id
       id: id,
       //*carga todos los datos del objeto con ..., y esto se extiende del update haciendo que todos los campos sean opcionales y los que no rellena se vuelven a colocar lo que se tenia antes
-      ...updateProductDto,
-      images: []
+      ...toUpdate,
     })
     if (!product) throw new NotFoundException(`Product with ${id} not found`)
 
-    try {
-      await this.productRepository.save(product);
+    //*Create QueryRunner: sirve para poder hacer transacciones osea que si falla algo se remuevan todos los cambios que se hicieron
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
+    try {
+
+      if (images) {                    //*La entidad que quiero afectar, {criterio}
+        await queryRunner.manager.delete(ProductImage, { product: id })
+
+
+        product.images = images?.map(image => this.productImageRepository.create({ url: image }))
+
+      } else {
+
+      }
+      await queryRunner.manager.save(product)
+      await queryRunner.commitTransaction()
+      await queryRunner.release()
       return product
     } catch (error) {
       this.handleExceptions(error)
