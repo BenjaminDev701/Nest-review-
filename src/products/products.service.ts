@@ -106,25 +106,38 @@ export class ProductsService {
 
     //*Create QueryRunner: sirve para poder hacer transacciones osea que si falla algo se remuevan todos los cambios que se hicieron
     const queryRunner = this.dataSource.createQueryRunner();
+    //*conecta con la bd
     await queryRunner.connect();
+    //*comienza la transaccion, aqui lo que hace es que no ejecutara los cambios hasta que no se confirme todo el proceso
     await queryRunner.startTransaction();
 
     try {
 
-      if (images) {                    //*La entidad que quiero afectar, {criterio}
-        await queryRunner.manager.delete(ProductImage, { product: id })
+      if (images) {
+        //* Paso 1: Borra de la BD todas las imagenes anteriores asociadas a este producto (productId = id)
+        await queryRunner.manager.delete(ProductImage, { product: { id } })
 
-
-        product.images = images?.map(image => this.productImageRepository.create({ url: image }))
-
-      } else {
+        //* Paso 2: Prepara las nuevas imagenes en memoria; convierte cada string (URL) en una entidad ProductImage para que TypeORM las pueda insertar
+        product.images = images.map(image => this.productImageRepository.create({ url: image }))
 
       }
+      //* Paso 3: Guarda el producto en la BD usando el queryRunner. Al tener cascade: true, inserta automaticamente las nuevas imagenes asociadas
       await queryRunner.manager.save(product)
+
+      //*aqui se confirman que la transaccion quedo completamente realizada
       await queryRunner.commitTransaction()
+
+      //*cierra y libera la transaccion 
       await queryRunner.release()
-      return product
+
+      return this.findOnePlain(id)
     } catch (error) {
+
+      //*si algo fallo en el proceso lo que hace esto esu qe cancela todo y deshace lo cambios
+      await queryRunner.rollbackTransaction()
+
+      //*cierra y libera la transaccion 
+      await queryRunner.release()
       this.handleExceptions(error)
     }
   }
