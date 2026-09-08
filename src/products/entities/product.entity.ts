@@ -3,7 +3,7 @@ import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn, BeforeUpdate, One
 import { ProductImage } from "./product-images.entity";
 
 //*La entidad es como la tabla de la bd 
-@Entity()
+@Entity({ name: "products" })
 export class Product {
     @PrimaryGeneratedColumn("uuid")
     id: string
