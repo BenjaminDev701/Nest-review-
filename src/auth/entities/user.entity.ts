@@ -1,11 +1,11 @@
 import { IsArray, IsBoolean, IsEmail, IsString, Min, MinLength } from "class-validator";
-import { Column, Entity, PrimaryColumn } from "typeorm";
+import { Column, Entity, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm";
 
 
 @Entity("users")
 export class User {
 
-    @PrimaryColumn("uuid")
+    @PrimaryGeneratedColumn("uuid")
     id: string
 
     @Column("text", { unique: true })
@@ -21,7 +21,9 @@ export class User {
     @IsString()
     fullName: string
 
-    @Column("bool")
+    @Column("bool", {
+        default: true
+    })
     @IsBoolean()
     isActive: boolean
 
