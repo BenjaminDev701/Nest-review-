@@ -12,7 +12,8 @@ export class User {
     @IsEmail()
     email: string
 
-    @Column("text")
+    //*selecionamos para que no salga la contraseña
+    @Column("text", { select: false })
     @IsString()
     @MinLength(8)
     password: string
