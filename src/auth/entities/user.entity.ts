@@ -1,5 +1,5 @@
 import { IsArray, IsBoolean, IsEmail, IsString, Min, MinLength } from "class-validator";
-import { Column, Entity, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm";
+import { BeforeInsert, BeforeUpdate, Column, Entity, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm";
 
 
 @Entity("users")
@@ -31,4 +31,14 @@ export class User {
     @Column("text", { array: true, default: ["user"] })
     @IsArray()
     roles: string[]
+
+    @BeforeInsert()
+    checkEmail() {
+        this.email = this.email.toLowerCase().trim()
+    }
+
+    @BeforeUpdate()
+    checkUpdate() {
+        this.checkEmail()
+    }
 }
