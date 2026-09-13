@@ -5,6 +5,7 @@ import { LoginUserDto } from './dto/login-user.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { GetUser } from './decorators/get-user-decorator';
 import { User } from './entities/user.entity';
+import { RawHeaders } from './decorators/get-rawHeaders-decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -23,15 +24,22 @@ export class AuthController {
 
   @Get("private")
   @UseGuards(AuthGuard())
+  //*metodo del controlador que se ejecuta si el cliente paso el filtro de AuthGuard
   testingPrivateRoute(
-    //@Req() request: Express.Request
-    @GetUser() user: User
+    @Req() req: Express.Request,
+    //*extrae todo el objeto completo
+    @GetUser() user: User,
+    //*extrae solo el email
+    @GetUser("email") userEmail: string,
+    @RawHeaders() rawHeaders: string[]
   ) {
 
 
     return {
       ok: true,
-      user
+      user,
+      userEmail,
+      rawHeaders
     }
   }
 
