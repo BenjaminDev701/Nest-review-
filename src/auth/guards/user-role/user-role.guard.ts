@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 
 @Injectable()
 export class UserRoleGuard implements CanActivate {
+  //*reflector nos permite lector de metadatos de los decoradores que estan en auth
   constructor(private readonly reflector: Reflector) { }
 
   canActivate(
@@ -11,6 +12,11 @@ export class UserRoleGuard implements CanActivate {
   ): boolean | Promise<boolean> | Observable<boolean> {
 
     const validRoles: string[] = this.reflector.get("roles", ctx.getHandler())
+
+    //*si la ruta no tiene un metadato de roles, se le permite el acceso
+    if (!validRoles) return true
+    //*si el metadato es un array vacio, se le permite el acceso
+    if (validRoles.length === 0) return true
     const req = ctx.switchToHttp().getRequest()
     const user = req.user;
 

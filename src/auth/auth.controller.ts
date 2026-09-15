@@ -46,7 +46,9 @@ export class AuthController {
 
 
   @Get("private2")
+
   @UseGuards(AuthGuard(), UserRoleGuard)
+  //*este setMetadato lo que hace es que envia informacion a los guard y decorators, nombre y valor , y son leidos por los guard que usan reflector
   @SetMetadata("roles", ["admin", "super-user",])
   privateRoute2(
     @GetUser() user: User
